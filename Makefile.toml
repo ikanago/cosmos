@@ -1,0 +1,4 @@
+[tasks.check]
+dependencies = [
+    { name = "check", path = "boot" }
+]
