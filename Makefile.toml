@@ -2,3 +2,8 @@
 dependencies = [
     { name = "check", path = "boot" }
 ]
+
+[tasks.build]
+dependencies = [
+    { name = "build", path = "boot" }
+]
