@@ -1,9 +1,11 @@
 [tasks.check]
 dependencies = [
-    { name = "check", path = "boot" }
+    { name = "check", path = "boot" },
+    { name = "check", path = "kernel" }
 ]
 
 [tasks.build]
 dependencies = [
-    { name = "build", path = "boot" }
+    { name = "build", path = "boot" },
+    { name = "build", path = "kernel" }
 ]

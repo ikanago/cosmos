@@ -1,7 +1,6 @@
 [build]
-target = "x86_64-unknown-uefi"
+target = "./x86_64-unknown-none-elf.json"
 
 [unstable]
-# alloc is needed by anyhow
 build-std = ["core", "compiler_builtins", "alloc"]
 build-std-features = ["compiler-builtins-mem"]

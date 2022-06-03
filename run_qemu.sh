@@ -10,6 +10,7 @@ mkdir -p mnt
 sudo mount -o loop disk.img mnt
 sudo mkdir -p mnt/EFI/BOOT
 sudo cp "$EFI_BINARY" mnt/EFI/BOOT/"$EFI_BINARY"
+sudo cp target/x86_64-unknown-none-elf/debug/kernel mnt/kernel.elf
 sudo umount mnt
 
 # Press <ESC> on boot

@@ -11,9 +11,9 @@ dependencies = ["format"]
 [tasks.check]
 dependencies = [
     "format",
-    "clippy",
+    "clippy"
 ]
 
 [tasks.build]
 command = "cargo"
-args = ["build", "--target", "x86_64-unknown-uefi"]
+args = ["build"]
