@@ -16,6 +16,8 @@ use uefi::{
     CStr16, {Handle, Status},
 };
 
+type KernelEntryPoint = extern "sysv64" fn();
+
 const KERNEL_FILE_NAME_MAX_LEN: usize = 32;
 const KERNEL_FILE_INFO_BUF_SIZE: usize = 8192;
 const PAGE_SIZE: usize = 0x1000;
@@ -64,32 +66,17 @@ fn load_kernel(
     boot_services: &BootServices,
     root_dir: &mut Directory,
     file_name: &str,
-) -> Result<extern "sysv64" fn()> {
-    let mut kernel_file = open_kernel_file(root_dir, file_name)?;
-    let mut kernel_file_info_buf = [0; KERNEL_FILE_INFO_BUF_SIZE];
-    let kernel_file_info = kernel_file
-        .get_info::<FileInfo>(&mut kernel_file_info_buf)
-        .map_err(|_| anyhow!("Failed to get the kernel file information"))?;
-    let kernel_file_size = kernel_file_info.file_size() as usize;
-
-    let kernel_content = {
-        let tmp = boot_services
-            .allocate_pool(MemoryType::LOADER_DATA, kernel_file_size)
-            .map_err(|_| anyhow!("Failed to allocate memories for temporary kernel analysis"))?;
-
-        unsafe { core::slice::from_raw_parts_mut(tmp, kernel_file_size) }
-    };
-    let num_read = kernel_file
-        .read(kernel_content)
-        .map_err(|_| anyhow!("Failed to load the kernel file to temporary allocated memories"))?;
-    assert_eq!(num_read, kernel_file_size);
+) -> Result<KernelEntryPoint> {
+    let kernel_file = open_kernel_file(root_dir, file_name)?;
+    let kernel_content = load_kernel_in_memory(boot_services, kernel_file)?;
 
     let binary = object::File::parse(kernel_content as &[u8])
         .map_err(|_| anyhow!("Failed to parse the kernel file"))?;
     let (kernel_base_address, kernel_end) = calculate_load_address_range(&binary);
 
     let num_pages = (kernel_end - kernel_base_address).div_ceil(PAGE_SIZE);
-    let allocated_pages = {
+    // `kernel_segments_memory` points to memory region that segments of the kernel should be loaded.
+    let kernel_segments_memory = {
         boot_services
             .allocate_pages(
                 AllocateType::Address(kernel_base_address),
@@ -108,11 +95,13 @@ fn load_kernel(
             .map_err(|_| anyhow!("Failed to read kernel data at {:x}", segment.address()))?;
         let p_offset = segment.address() as usize - kernel_base_address;
         let end_address = p_offset + data.len();
-        allocated_pages[p_offset..end_address].copy_from_slice(data);
+        // The head address of `kernel_segments_memory` is the address of the first segment of the kernel.
+        // So load the segment data at `p_offset`, which is equivalent to the one in the program header.
+        kernel_segments_memory[p_offset..end_address].copy_from_slice(data);
     }
 
     let entry_point_address = binary.entry() as usize;
-    let entry_point: extern "sysv64" fn() = unsafe { core::mem::transmute(entry_point_address) };
+    let entry_point: KernelEntryPoint = unsafe { core::mem::transmute(entry_point_address) };
 
     boot_services
         .free_pool(kernel_content.as_mut_ptr())
@@ -134,6 +123,37 @@ fn open_kernel_file(root_dir: &mut Directory, file_name: &str) -> Result<Regular
     Ok(kernel_file)
 }
 
+/// Load the kernel to the memory from `kernel_file` for temporary use.
+/// Returned array must be freed by `BootServeces::free_pool()`.
+fn load_kernel_in_memory(
+    boot_services: &BootServices,
+    mut kernel_file: RegularFile,
+) -> Result<&mut [u8]> {
+    let kernel_file_size = {
+        // TODO: research an exact size of this buffer.
+        let mut kernel_file_info_buf = [0; KERNEL_FILE_INFO_BUF_SIZE];
+        let kernel_file_info = kernel_file
+            .get_info::<FileInfo>(&mut kernel_file_info_buf)
+            .map_err(|_| anyhow!("Failed to get the kernel file information"))?;
+        kernel_file_info.file_size() as usize
+    };
+
+    let kernel_content = {
+        let tmp = boot_services
+            .allocate_pool(MemoryType::LOADER_DATA, kernel_file_size)
+            .map_err(|_| anyhow!("Failed to allocate memories for temporary kernel analysis"))?;
+
+        unsafe { core::slice::from_raw_parts_mut(tmp, kernel_file_size) }
+    };
+    let num_read = kernel_file
+        .read(kernel_content)
+        .map_err(|_| anyhow!("Failed to load the kernel file to temporary allocated memories"))?;
+    assert_eq!(num_read, kernel_file_size);
+
+    Ok(kernel_content)
+}
+
+/// Calculate an address range of segments to be loaded.
 fn calculate_load_address_range(binary: &object::read::File) -> (usize, usize) {
     let mut start = u64::MAX;
     let mut end = u64::MIN;
