@@ -39,8 +39,6 @@ pub struct Screen {
     b_offset: usize,
 }
 
-impl Screen {}
-
 impl From<FrameBufferConfig> for Screen {
     fn from(config: FrameBufferConfig) -> Self {
         let (r_offset, g_offset, b_offset) = match config.format {
@@ -87,36 +85,54 @@ impl Screen {
     }
 }
 
+#[derive(Clone, Copy, Debug)]
+pub struct Attribute {
+    fg_color: Color,
+    bg_color: Color,
+}
+
+impl Default for Attribute {
+    fn default() -> Self {
+        Self {
+            fg_color: Color::WHITE,
+            bg_color: Color::BLACK,
+        }
+    }
+}
+
 pub struct Font;
 
 impl Font {
     const FONT_DATA: &'static [u8] = include_bytes!("../assets/hankaku.bin");
-    const BYTES_PER_CHAR: usize = 16;
-    const CHAR_WIDTH: usize = 8;
-    const CHAR_MARGIN: usize = 1;
+    pub const CHAR_WIDTH: usize = 8;
+    pub const CHAR_HEIGHT: usize = 16;
 
-    pub fn draw_char(&self, screen: &Screen, x: usize, y: usize, ch: char, fg_color: Color) {
+    /// Draw character `ch` at the specific position.
+    /// (x, y) is the coordinate of top left pixel of the bounding rectangle.
+    pub fn draw_char(&self, screen: &Screen, x: usize, y: usize, ch: char, attribute: Attribute) {
         let ch = if ch as usize >= Self::FONT_DATA.len() {
             b'?' as usize
         } else {
             ch as usize
         };
 
-        let ch_pos = Self::BYTES_PER_CHAR * ch;
-        for dy in 0..Self::BYTES_PER_CHAR {
+        let ch_pos = Self::CHAR_HEIGHT * ch;
+        for dy in 0..Self::CHAR_HEIGHT {
             let row_in_bitmap = Self::FONT_DATA[ch_pos + dy];
             for dx in 0..Self::CHAR_WIDTH {
                 if row_in_bitmap & (0x80 >> dx) != 0 {
-                    screen.draw_pixel(x + dx, y + dy, fg_color);
+                    screen.draw_pixel(x + dx, y + dy, attribute.fg_color);
+                } else {
+                    screen.draw_pixel(x + dx, y + dy, attribute.bg_color);
                 }
             }
         }
     }
 
-    pub fn draw_string(&self, screen: &Screen, x: usize, y: usize, s: &str, fg_color: Color) {
+    pub fn draw_string(&self, screen: &Screen, x: usize, y: usize, s: &str, attribute: Attribute) {
         for (i, ch) in s.chars().enumerate() {
-            let x = x + i * (Self::CHAR_WIDTH + Self::CHAR_MARGIN * 2);
-            self.draw_char(screen, x, y, ch, fg_color);
+            let x = x + i * Self::CHAR_WIDTH;
+            self.draw_char(screen, x, y, ch, attribute);
         }
     }
 }

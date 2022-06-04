@@ -2,25 +2,25 @@
 #![no_std]
 #![allow(clippy::not_unsafe_ptr_arg_deref)]
 
+mod console;
 mod graphics;
 
 use common::FrameBufferConfig;
+use console::Console;
 use core::arch::asm;
 use graphics::{Color, Font, Screen};
 
 #[no_mangle]
 extern "C" fn kernel_main(config: FrameBufferConfig) -> ! {
     let screen = Screen::from(config);
-    screen.draw_all(Color::WHITE);
+    screen.draw_all(Color::BLACK);
 
     let font = Font;
-    font.draw_string(&screen, 10, 10, "Hello, kernel!", Color::RED);
-
-    for x in 100..200 {
-        for y in 100..200 {
-            screen.draw_pixel(x, y, Color::RED);
-        }
+    let mut console = Console::new(&screen, 25, 80);
+    for ch in "Hello, kernel!".chars() {
+        console.insert_char(ch);
     }
+    console.render(&font);
 
     #[allow(clippy::empty_loop)]
     loop {

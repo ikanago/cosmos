@@ -64,6 +64,8 @@ fn boot(handle: Handle, mut system_table: SystemTable<Boot>) -> ! {
 
     let frame_buffer_config = get_frame_buffer_config(boot_services);
 
+    writeln!(system_table.stdout(), "Kernel loaded").unwrap();
+
     system_table
         .exit_boot_services(handle, &mut memmap_buf)
         .unwrap();
