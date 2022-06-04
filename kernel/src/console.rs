@@ -34,19 +34,57 @@ impl<'s> Console<'s> {
         }
     }
 
-    pub fn insert_char(&mut self, ch: char) {
-        let index = self.cursor.row * self.num_columns + self.cursor.column;
-        self.buffer[index] = Some(ch);
-        self.move_cursor_forward();
+    /// Feed a character `ch` to the console.
+    /// This method also handles cursor movement.
+    pub fn put_char(&mut self, ch: char) {
+        match ch {
+            '\n' => {
+                self.move_cursor_down();
+            }
+            ch => {
+                let index = self.cursor.row * self.num_columns + self.cursor.column;
+                self.buffer[index] = Some(ch);
+                self.move_cursor_forward();
+            }
+        }
     }
 
-    fn move_cursor_forward(&mut self) {
-        if self.cursor.column == self.num_columns - 1 {
-            self.cursor.row += 1;
-            self.cursor.column = 0;
-        } else {
-            self.cursor.column += 1;
+    /// Feed a string `s` to the console.
+    /// Equivalent to calling `Console::put_char()` for each character in the string.
+    pub fn put_string(&mut self, s: &str) {
+        for ch in s.chars() {
+            self.put_char(ch);
         }
+    }
+
+    /// Move cursor one character forward.
+    /// Intended to be called in `Console::put_char()`
+    fn move_cursor_forward(&mut self) {
+        if self.cursor.column < self.num_columns - 1 {
+            self.cursor.column += 1;
+        } else {
+            self.move_cursor_down();
+        }
+    }
+
+    /// Move cursor one row down.
+    /// Also scrolls console contents if needed.
+    fn move_cursor_down(&mut self) {
+        self.cursor.column = 0;
+        if self.cursor.row < self.num_rows - 1 {
+            self.cursor.row += 1;
+        } else {
+            self.scroll_up();
+        }
+    }
+
+    fn scroll_up(&mut self) {
+        let end = self.num_rows * self.num_columns;
+        let copy_range = self.num_columns..end;
+        self.buffer.copy_within(copy_range, 0);
+
+        let fill_range = (end - self.num_columns)..end;
+        self.buffer[fill_range].fill(None);
     }
 
     pub fn render(&self, font: &Font) {
