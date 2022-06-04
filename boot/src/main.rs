@@ -8,7 +8,10 @@ use core::fmt::Write;
 use object::{Object, ObjectSegment};
 use uefi::{
     prelude::entry,
-    proto::media::file::{Directory, File, FileAttribute, FileInfo, FileMode, RegularFile},
+    proto::{
+        console::gop::GraphicsOutput,
+        media::file::{Directory, File, FileAttribute, FileInfo, FileMode, RegularFile},
+    },
     table::{
         boot::{AllocateType, BootServices, MemoryType},
         Boot, SystemTable,
@@ -16,7 +19,7 @@ use uefi::{
     CStr16, {Handle, Status},
 };
 
-type KernelEntryPoint = extern "sysv64" fn();
+type KernelEntryPoint = extern "sysv64" fn(*mut u8, usize);
 
 const KERNEL_FILE_NAME_MAX_LEN: usize = 32;
 const KERNEL_FILE_INFO_BUF_SIZE: usize = 8192;
@@ -40,17 +43,28 @@ fn boot(handle: Handle, mut system_table: SystemTable<Boot>) -> Result<()> {
         .memory_map(&mut memmap_buf)
         .map_err(|_| anyhow!("Failed to get memory map"))?;
 
+    let protocol = boot_services.locate_protocol::<GraphicsOutput>().unwrap();
+    let gop = unsafe { &mut *protocol.get() };
+    let mut frame_buffer = gop.frame_buffer();
+    let frame_buffer_base = frame_buffer.as_mut_ptr();
+    let frame_buffer_size = frame_buffer.size();
+
     let mut root_dir = open_root_dir(handle, boot_services)
         .map_err(|_| anyhow!("Failed to open root directory"))?;
     let kernel_main = load_kernel(boot_services, &mut root_dir, "\\kernel.elf")?;
 
-    writeln!(system_table.stdout(), "Kernel loaded").unwrap();
+    writeln!(
+        system_table.stdout(),
+        "Kernel entry point: 0x{:x}",
+        kernel_main as usize
+    )
+    .unwrap();
 
     system_table
         .exit_boot_services(handle, &mut memmap_buf)
         .map_err(|_| anyhow!("Failed to exit boot services"))?;
 
-    kernel_main();
+    kernel_main(frame_buffer_base, frame_buffer_size);
 
     #[allow(clippy::empty_loop)]
     loop {}

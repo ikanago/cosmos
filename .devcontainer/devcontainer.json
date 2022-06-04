@@ -18,7 +18,10 @@
         "QEMU_OPTS": "-vnc :0"
     },
     "extensions": [
-        "rust-lang.rust-analyzer"
+        "bungcip.better-toml",
+        "rust-lang.rust-analyzer",
+        "oderwat.indent-rainbow",
+        "slevesque.vscode-hexdump"
     ],
     "postCreateCommand": "/usr/bin/git config --global gpg.program /usr/bin/gpg && /usr/bin/git config --global commit.gpgsign true",
     // Comment out connect as root instead. More info: https://aka.ms/vscode-remote/containers/non-root.
