@@ -4,6 +4,7 @@
 #![feature(int_roundings)]
 
 use anyhow::{anyhow, Result};
+use common::FrameBufferConfig;
 use core::fmt::Write;
 use object::{Object, ObjectSegment};
 use uefi::{
@@ -19,69 +20,81 @@ use uefi::{
     CStr16, {Handle, Status},
 };
 
-type KernelEntryPoint = extern "sysv64" fn(*mut u8, usize);
+type KernelEntryPoint = extern "sysv64" fn(FrameBufferConfig);
 
 const KERNEL_FILE_NAME_MAX_LEN: usize = 32;
 const KERNEL_FILE_INFO_BUF_SIZE: usize = 8192;
 const PAGE_SIZE: usize = 0x1000;
 
 #[entry]
-fn efi_main(handle: Handle, system_table: SystemTable<Boot>) -> Status {
-    boot(handle, system_table).unwrap();
-    Status::SUCCESS
-}
-
-fn boot(handle: Handle, mut system_table: SystemTable<Boot>) -> Result<()> {
-    uefi_services::init(&mut system_table).expect("Failed to initialize utilities");
+fn efi_main(handle: Handle, mut system_table: SystemTable<Boot>) -> Status {
+    uefi_services::init(&mut system_table).unwrap();
     system_table.stdout().reset(false).unwrap();
     writeln!(system_table.stdout(), "Hello, UEFI!").unwrap();
 
+    boot(handle, system_table);
+
+    #[allow(unreachable_code)]
+    Status::SUCCESS
+}
+
+fn boot(handle: Handle, mut system_table: SystemTable<Boot>) -> ! {
     let boot_services = system_table.boot_services();
     let mut memmap_buf = [0; 4 * PAGE_SIZE];
     assert!(boot_services.memory_map_size().map_size < memmap_buf.len());
-    boot_services
-        .memory_map(&mut memmap_buf)
-        .map_err(|_| anyhow!("Failed to get memory map"))?;
+    if let Err(err) = boot_services.memory_map(&mut memmap_buf) {
+        // Error must be printed in this function because `system_table` is taken by `exit_boot_service`.
+        writeln!(
+            system_table.stdout(),
+            "Failed to get memory map; status: {:?}, data: {:?}",
+            err.status(),
+            err.data()
+        )
+        .unwrap();
+        panic!();
+    }
 
-    let protocol = boot_services.locate_protocol::<GraphicsOutput>().unwrap();
-    let gop = unsafe { &mut *protocol.get() };
-    let mut frame_buffer = gop.frame_buffer();
-    let frame_buffer_base = frame_buffer.as_mut_ptr();
-    let frame_buffer_size = frame_buffer.size();
+    let kernel_main = match load_kernel(handle, boot_services, "\\kernel.elf") {
+        Ok(kernel_main) => kernel_main,
+        Err(err) => {
+            writeln!(system_table.stdout(), "Failed to load kernel: {:?}", err).unwrap();
+            panic!();
+        }
+    };
 
-    let mut root_dir = open_root_dir(handle, boot_services)
-        .map_err(|_| anyhow!("Failed to open root directory"))?;
-    let kernel_main = load_kernel(boot_services, &mut root_dir, "\\kernel.elf")?;
-
-    writeln!(
-        system_table.stdout(),
-        "Kernel entry point: 0x{:x}",
-        kernel_main as usize
-    )
-    .unwrap();
+    let frame_buffer_config = get_frame_buffer_config(boot_services);
 
     system_table
         .exit_boot_services(handle, &mut memmap_buf)
-        .map_err(|_| anyhow!("Failed to exit boot services"))?;
+        .unwrap();
 
-    kernel_main(frame_buffer_base, frame_buffer_size);
+    kernel_main(frame_buffer_config);
 
     #[allow(clippy::empty_loop)]
     loop {}
 }
 
-fn open_root_dir(handle: Handle, boot_services: &BootServices) -> uefi::Result<Directory> {
-    let fs = boot_services.get_image_file_system(handle)?;
-    let fs = unsafe { &mut *fs.interface.get() };
-    fs.open_volume()
+fn get_frame_buffer_config(boot_services: &BootServices) -> FrameBufferConfig {
+    let gop = boot_services.locate_protocol::<GraphicsOutput>().unwrap();
+    let gop = unsafe { &mut *gop.get() };
+    let mut frame_buffer = gop.frame_buffer();
+    let frame_buffer_base = frame_buffer.as_mut_ptr();
+    let frame_buffer_size = frame_buffer.size();
+
+    FrameBufferConfig {
+        base: frame_buffer_base,
+        size: frame_buffer_size,
+    }
 }
 
 fn load_kernel(
+    handle: Handle,
     boot_services: &BootServices,
-    root_dir: &mut Directory,
     file_name: &str,
 ) -> Result<KernelEntryPoint> {
-    let kernel_file = open_kernel_file(root_dir, file_name)?;
+    let mut root_dir = open_root_dir(handle, boot_services)
+        .map_err(|_| anyhow!("Failed to open root directory"))?;
+    let kernel_file = open_kernel_file(&mut root_dir, file_name)?;
     let kernel_content = load_kernel_in_memory(boot_services, kernel_file)?;
 
     let binary = object::File::parse(kernel_content as &[u8])
@@ -122,6 +135,12 @@ fn load_kernel(
         .map_err(|_| anyhow!("Failed to free allocated pool"))?;
 
     Ok(entry_point)
+}
+
+fn open_root_dir(handle: Handle, boot_services: &BootServices) -> uefi::Result<Directory> {
+    let fs = boot_services.get_image_file_system(handle)?;
+    let fs = unsafe { &mut *fs.interface.get() };
+    fs.open_volume()
 }
 
 fn open_kernel_file(root_dir: &mut Directory, file_name: &str) -> Result<RegularFile> {

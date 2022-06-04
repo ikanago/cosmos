@@ -7,6 +7,7 @@ edition = "2021"
 
 [dependencies]
 anyhow = { version = "1.0.57", default-features = false }
+common = { path = "../common" }
 object = { version = "0.28.4", default-features = false, features = ["read"] }
 uefi = { version = "0.16.0", features = ["alloc", "exts"] }
 uefi-services = "0.13.0"
