@@ -15,5 +15,3 @@ pub struct FrameBufferConfig {
     pub vertical_resolution: usize,
     pub format: PixelFormat,
 }
-
-impl FrameBufferConfig {}

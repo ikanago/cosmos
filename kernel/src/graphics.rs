@@ -86,3 +86,37 @@ impl Screen {
         }
     }
 }
+
+pub struct Font;
+
+impl Font {
+    const FONT_DATA: &'static [u8] = include_bytes!("../assets/hankaku.bin");
+    const BYTES_PER_CHAR: usize = 16;
+    const CHAR_WIDTH: usize = 8;
+    const CHAR_MARGIN: usize = 1;
+
+    pub fn draw_char(&self, screen: &Screen, x: usize, y: usize, ch: char, fg_color: Color) {
+        let ch = if ch as usize >= Self::FONT_DATA.len() {
+            b'?' as usize
+        } else {
+            ch as usize
+        };
+
+        let ch_pos = Self::BYTES_PER_CHAR * ch;
+        for dy in 0..Self::BYTES_PER_CHAR {
+            let row_in_bitmap = Self::FONT_DATA[ch_pos + dy];
+            for dx in 0..Self::CHAR_WIDTH {
+                if row_in_bitmap & (0x80 >> dx) != 0 {
+                    screen.draw_pixel(x + dx, y + dy, fg_color);
+                }
+            }
+        }
+    }
+
+    pub fn draw_string(&self, screen: &Screen, x: usize, y: usize, s: &str, fg_color: Color) {
+        for (i, ch) in s.chars().enumerate() {
+            let x = x + i * (Self::CHAR_WIDTH + Self::CHAR_MARGIN * 2);
+            self.draw_char(screen, x, y, ch, fg_color);
+        }
+    }
+}

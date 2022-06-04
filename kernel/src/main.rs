@@ -6,15 +6,18 @@ mod graphics;
 
 use common::FrameBufferConfig;
 use core::arch::asm;
-use graphics::{Color, Screen};
+use graphics::{Color, Font, Screen};
 
 #[no_mangle]
 extern "C" fn kernel_main(config: FrameBufferConfig) -> ! {
     let screen = Screen::from(config);
     screen.draw_all(Color::WHITE);
 
-    for x in 0..200 {
-        for y in 0..200 {
+    let font = Font;
+    font.draw_string(&screen, 10, 10, "Hello, kernel!", Color::RED);
+
+    for x in 100..200 {
+        for y in 100..200 {
             screen.draw_pixel(x, y, Color::RED);
         }
     }

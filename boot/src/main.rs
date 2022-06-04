@@ -126,6 +126,15 @@ fn load_kernel(
         }
     };
 
+    // Area that a segment is not loaded should be 0-cleared.
+    unsafe {
+        core::ptr::write_bytes(
+            kernel_segments_memory.as_mut_ptr(),
+            0,
+            kernel_segments_memory.len(),
+        )
+    };
+
     for segment in binary.segments() {
         let data = segment
             .data()
