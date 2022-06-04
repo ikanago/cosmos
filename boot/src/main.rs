@@ -4,13 +4,13 @@
 #![feature(int_roundings)]
 
 use anyhow::{anyhow, Result};
-use common::FrameBufferConfig;
+use common::{FrameBufferConfig, PixelFormat};
 use core::fmt::Write;
 use object::{Object, ObjectSegment};
 use uefi::{
     prelude::entry,
     proto::{
-        console::gop::GraphicsOutput,
+        console::gop::{GraphicsOutput, PixelFormat as UefiPixelFormat},
         media::file::{Directory, File, FileAttribute, FileInfo, FileMode, RegularFile},
     },
     table::{
@@ -79,11 +79,21 @@ fn get_frame_buffer_config(boot_services: &BootServices) -> FrameBufferConfig {
     let gop = unsafe { &mut *gop.get() };
     let mut frame_buffer = gop.frame_buffer();
     let frame_buffer_base = frame_buffer.as_mut_ptr();
-    let frame_buffer_size = frame_buffer.size();
+
+    let mode_info = gop.current_mode_info();
+    let stride = mode_info.stride();
+    let (horizontal_resolution, vertical_resolution) = mode_info.resolution();
 
     FrameBufferConfig {
         base: frame_buffer_base,
-        size: frame_buffer_size,
+        stride,
+        horizontal_resolution,
+        vertical_resolution,
+        format: match mode_info.pixel_format() {
+            UefiPixelFormat::Rgb => PixelFormat::Rgb,
+            UefiPixelFormat::Bgr => PixelFormat::Bgr,
+            _ => unimplemented!(),
+        },
     }
 }
 
