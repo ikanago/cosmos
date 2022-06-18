@@ -2,13 +2,15 @@
 #![no_std]
 #![allow(clippy::not_unsafe_ptr_arg_deref)]
 
-mod console;
 mod graphics;
 
 use common::FrameBufferConfig;
-use console::Console;
 use core::arch::asm;
-use graphics::{Color, Font, Screen, Vector2D};
+use graphics::{
+    console::Console,
+    screen::{FilledRectangle, Screen},
+    Color, Font, Point, Render, mouse::MouseCursor,
+};
 
 #[no_mangle]
 extern "C" fn kernel_main(config: FrameBufferConfig) -> ! {
@@ -16,24 +18,26 @@ extern "C" fn kernel_main(config: FrameBufferConfig) -> ! {
     let frame_height = config.vertical_resolution;
     let screen = Screen::from(config);
     screen.draw_all(Color::BLACK);
-    screen.draw_filled_rectangle(
-        Vector2D::new(0, frame_height - 50),
-        Vector2D::new(frame_width, 50),
+    screen.draw(&FilledRectangle::new(
+        Point::new(0, frame_height - 50),
+        Point::new(frame_width, 50),
         Color {
             r: 0x32,
             g: 0x35,
             b: 0xeb,
         },
-    );
+    ));
 
-    let font = Font;
-    let mut console = Console::new(&screen, 5, 20);
+    let mut console = Console::new(5, 20, Font);
     console.put_string("Hello, kernel!\n");
     console.put_string("line2\n");
     console.put_string("line3\n");
     console.put_string("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\n");
     console.put_string("line5");
-    console.render(&font);
+    screen.draw(&console);
+
+    let mouse_cursor = MouseCursor::new(Point::new(300, 300), Color::WHITE, Color::BLACK);
+    screen.draw(&mouse_cursor);
 
     #[allow(clippy::empty_loop)]
     loop {

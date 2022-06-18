@@ -1,4 +1,4 @@
-use crate::graphics::{Attribute, Font, Screen, Vector2D};
+use crate::graphics::{Attribute, Font, Point, Render, Screen};
 
 const CONSOLE_BUFFER_SIZE: usize = 10_000;
 
@@ -8,24 +8,24 @@ struct Cursor {
     column: usize,
 }
 
-pub struct Console<'s> {
-    screen: &'s Screen,
+pub struct Console {
     num_rows: usize,
     num_columns: usize,
     buffer: [Option<char>; CONSOLE_BUFFER_SIZE],
     cursor: Cursor,
     attribute: Attribute,
+    font: Font,
 }
 
-impl<'s> Console<'s> {
-    pub fn new(screen: &'s Screen, num_lines: usize, num_columns: usize) -> Self {
+impl Console {
+    pub fn new(num_lines: usize, num_columns: usize, font: Font) -> Self {
         Self {
-            screen,
             num_rows: num_lines,
             num_columns,
             buffer: [None; CONSOLE_BUFFER_SIZE],
             cursor: Cursor::default(),
             attribute: Attribute::default(),
+            font,
         }
     }
 
@@ -81,15 +81,18 @@ impl<'s> Console<'s> {
         let fill_range = (end - self.num_columns)..end;
         self.buffer[fill_range].fill(None);
     }
+}
 
-    pub fn render(&self, font: &Font) {
+impl Render for Console {
+    fn render(&self, screen: &Screen) {
         for row in 0..self.num_rows {
             for column in 0..self.num_columns {
                 let index = row * self.num_columns + column;
                 if let Some(ch) = self.buffer[index] {
                     let x = column * Font::CHAR_WIDTH;
                     let y = row * Font::CHAR_HEIGHT;
-                    font.draw_char(self.screen, Vector2D::new(x, y), ch, self.attribute);
+                    self.font
+                        .draw_char(screen, Point::new(x, y), ch, self.attribute);
                 }
             }
         }
