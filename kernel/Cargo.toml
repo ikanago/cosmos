@@ -7,3 +7,4 @@ edition = "2021"
 
 [dependencies]
 common = { path = "../common" }
+spin = { version = "0.9.3", default-features = false, features = ["lazy", "spin_mutex"] }

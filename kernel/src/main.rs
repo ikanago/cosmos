@@ -9,7 +9,7 @@ use core::arch::asm;
 use graphics::{
     console::Console,
     mouse::MouseCursor,
-    screen::{FilledRectangle, Screen},
+    screen::{initialize_screen, FilledRectangle, ScreenLock},
     Color, Font, Point, Render,
 };
 
@@ -17,7 +17,8 @@ use graphics::{
 extern "C" fn kernel_main(config: FrameBufferConfig) -> ! {
     let frame_width = config.horizontal_resolution;
     let frame_height = config.vertical_resolution;
-    let mut screen = Screen::from(config);
+    initialize_screen(config);
+    let mut screen = ScreenLock::lock();
     screen.draw_all(Color::BLACK);
     screen.draw(&FilledRectangle::new(
         Point::new(0, frame_height - 50),
@@ -40,16 +41,15 @@ extern "C" fn kernel_main(config: FrameBufferConfig) -> ! {
     let mouse_cursor = MouseCursor::new(Point::new(300, 300), Color::WHITE, Color::BLACK);
     screen.draw(&mouse_cursor);
 
-    #[allow(clippy::empty_loop)]
-    loop {
-        unsafe {
-            asm!("hlt");
-        }
-    }
+    hlt_loop();
 }
 
 #[panic_handler]
 fn panic(_info: &core::panic::PanicInfo) -> ! {
+    hlt_loop()
+}
+
+fn hlt_loop() -> ! {
     #[allow(clippy::empty_loop)]
     loop {
         unsafe { asm!("hlt") }
