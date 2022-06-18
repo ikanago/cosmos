@@ -84,7 +84,7 @@ impl Console {
 }
 
 impl Render for Console {
-    fn render(&self, screen: &Screen) {
+    fn render(&self, screen: &mut Screen) {
         for row in 0..self.num_rows {
             for column in 0..self.num_columns {
                 let index = row * self.num_columns + column;

@@ -7,7 +7,7 @@ use screen::Screen;
 
 /// Trait to abstruct objects that are rendered on `Screen`.
 pub trait Render {
-    fn render(&self, screen: &Screen);
+    fn render(&self, screen: &mut Screen);
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -92,7 +92,13 @@ impl Font {
 
     /// Draw character `ch` at the specific position.
     /// (x, y) is the coordinate of top left pixel of the bounding rectangle.
-    pub fn draw_char(&self, screen: &Screen, pos: Point<usize>, ch: char, attribute: Attribute) {
+    pub fn draw_char(
+        &self,
+        screen: &mut Screen,
+        pos: Point<usize>,
+        ch: char,
+        attribute: Attribute,
+    ) {
         let ch = if ch as usize >= Self::FONT_DATA.len() {
             b'?' as usize
         } else {
@@ -112,7 +118,13 @@ impl Font {
         }
     }
 
-    pub fn draw_string(&self, screen: &Screen, pos: Point<usize>, s: &str, attribute: Attribute) {
+    pub fn draw_string(
+        &self,
+        screen: &mut Screen,
+        pos: Point<usize>,
+        s: &str,
+        attribute: Attribute,
+    ) {
         for (i, ch) in s.chars().enumerate() {
             let pos = Point::new(pos.x + i * Self::CHAR_WIDTH, pos.y);
             self.draw_char(screen, pos, ch, attribute);

@@ -1,4 +1,4 @@
-use super::{Color, Point, Render};
+use super::{screen::Screen, Color, Point, Render};
 
 pub struct MouseCursor {
     pos: Point<usize>,
@@ -44,7 +44,7 @@ impl MouseCursor {
 }
 
 impl Render for MouseCursor {
-    fn render(&self, screen: &super::screen::Screen) {
+    fn render(&self, screen: &mut Screen) {
         for (y, row) in MouseCursor::MOUSE_CURSOR_SHAPE.iter().enumerate() {
             for (x, pixel) in row.iter().enumerate() {
                 let color = match pixel {

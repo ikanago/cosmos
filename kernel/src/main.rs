@@ -8,15 +8,16 @@ use common::FrameBufferConfig;
 use core::arch::asm;
 use graphics::{
     console::Console,
+    mouse::MouseCursor,
     screen::{FilledRectangle, Screen},
-    Color, Font, Point, Render, mouse::MouseCursor,
+    Color, Font, Point, Render,
 };
 
 #[no_mangle]
 extern "C" fn kernel_main(config: FrameBufferConfig) -> ! {
     let frame_width = config.horizontal_resolution;
     let frame_height = config.vertical_resolution;
-    let screen = Screen::from(config);
+    let mut screen = Screen::from(config);
     screen.draw_all(Color::BLACK);
     screen.draw(&FilledRectangle::new(
         Point::new(0, frame_height - 50),

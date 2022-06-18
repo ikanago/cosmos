@@ -80,14 +80,16 @@ fn get_frame_buffer_config(boot_services: &BootServices) -> FrameBufferConfig {
     let gop = boot_services.locate_protocol::<GraphicsOutput>().unwrap();
     let gop = unsafe { &mut *gop.get() };
     let mut frame_buffer = gop.frame_buffer();
-    let frame_buffer_base = frame_buffer.as_mut_ptr();
+    let buffer_base = frame_buffer.as_mut_ptr();
+    let buffer_size = frame_buffer.size();
 
     let mode_info = gop.current_mode_info();
     let stride = mode_info.stride();
     let (horizontal_resolution, vertical_resolution) = mode_info.resolution();
 
     FrameBufferConfig {
-        base: frame_buffer_base,
+        buffer_base,
+        buffer_size,
         stride,
         horizontal_resolution,
         vertical_resolution,

@@ -8,7 +8,8 @@ pub enum PixelFormat {
 
 #[repr(C)]
 pub struct FrameBufferConfig {
-    pub base: *mut u8,
+    pub buffer_base: *mut u8,
+    pub buffer_size: usize,
     // Horizontal length of frame buffer, which might be longer than `horizontal_resolution`.
     pub stride: usize,
     pub horizontal_resolution: usize,
