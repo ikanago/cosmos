@@ -1,16 +1,11 @@
-use crate::graphics::{Attribute, Font, Screen};
+use crate::graphics::{Attribute, Font, Screen, Vector2D};
 
 const CONSOLE_BUFFER_SIZE: usize = 10_000;
 
+#[derive(Default)]
 struct Cursor {
     row: usize,
     column: usize,
-}
-
-impl Default for Cursor {
-    fn default() -> Self {
-        Self { row: 0, column: 0 }
-    }
 }
 
 pub struct Console<'s> {
@@ -94,7 +89,7 @@ impl<'s> Console<'s> {
                 if let Some(ch) = self.buffer[index] {
                     let x = column * Font::CHAR_WIDTH;
                     let y = row * Font::CHAR_HEIGHT;
-                    font.draw_char(self.screen, x, y, ch, self.attribute);
+                    font.draw_char(self.screen, Vector2D::new(x, y), ch, self.attribute);
                 }
             }
         }

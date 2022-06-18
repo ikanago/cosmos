@@ -8,12 +8,23 @@ mod graphics;
 use common::FrameBufferConfig;
 use console::Console;
 use core::arch::asm;
-use graphics::{Color, Font, Screen};
+use graphics::{Color, Font, Screen, Vector2D};
 
 #[no_mangle]
 extern "C" fn kernel_main(config: FrameBufferConfig) -> ! {
+    let frame_width = config.horizontal_resolution;
+    let frame_height = config.vertical_resolution;
     let screen = Screen::from(config);
     screen.draw_all(Color::BLACK);
+    screen.draw_filled_rectangle(
+        Vector2D::new(0, frame_height - 50),
+        Vector2D::new(frame_width, 50),
+        Color {
+            r: 0x32,
+            g: 0x35,
+            b: 0xeb,
+        },
+    );
 
     let font = Font;
     let mut console = Console::new(&screen, 5, 20);

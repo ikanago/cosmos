@@ -1,3 +1,5 @@
+use core::ops::AddAssign;
+
 use common::{FrameBufferConfig, PixelFormat};
 
 pub const BYTES_PER_PIXEL: usize = 4;
@@ -26,6 +28,38 @@ impl Color {
         g: 0x0,
         b: 0x0,
     };
+
+    pub fn new(r: u8, g: u8, b: u8) -> Self {
+        Self { r, g, b }
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct Vector2D<T>
+where
+    T: AddAssign,
+{
+    x: T,
+    y: T,
+}
+
+impl<T> Vector2D<T>
+where
+    T: AddAssign,
+{
+    pub fn new(x: T, y: T) -> Self {
+        Self { x, y }
+    }
+}
+
+impl<T> AddAssign for Vector2D<T>
+where
+    T: AddAssign,
+{
+    fn add_assign(&mut self, rhs: Self) {
+        self.x = rhs.x;
+        self.y = rhs.y;
+    }
 }
 
 /// This struct is responsible for drawing pixels via frame buffer.
@@ -83,6 +117,14 @@ impl Screen {
             }
         }
     }
+
+    pub fn draw_filled_rectangle(&self, pos: Vector2D<usize>, size: Vector2D<usize>, color: Color) {
+        for i in 0..size.x {
+            for j in 0..size.y {
+                self.draw_pixel(pos.x + i, pos.y + j, color);
+            }
+        }
+    }
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -109,7 +151,7 @@ impl Font {
 
     /// Draw character `ch` at the specific position.
     /// (x, y) is the coordinate of top left pixel of the bounding rectangle.
-    pub fn draw_char(&self, screen: &Screen, x: usize, y: usize, ch: char, attribute: Attribute) {
+    pub fn draw_char(&self, screen: &Screen, pos: Vector2D<usize>, ch: char, attribute: Attribute) {
         let ch = if ch as usize >= Self::FONT_DATA.len() {
             b'?' as usize
         } else {
@@ -121,18 +163,24 @@ impl Font {
             let row_in_bitmap = Self::FONT_DATA[ch_pos + dy];
             for dx in 0..Self::CHAR_WIDTH {
                 if row_in_bitmap & (0x80 >> dx) != 0 {
-                    screen.draw_pixel(x + dx, y + dy, attribute.fg_color);
+                    screen.draw_pixel(pos.x + dx, pos.y + dy, attribute.fg_color);
                 } else {
-                    screen.draw_pixel(x + dx, y + dy, attribute.bg_color);
+                    screen.draw_pixel(pos.x + dx, pos.y + dy, attribute.bg_color);
                 }
             }
         }
     }
 
-    pub fn draw_string(&self, screen: &Screen, x: usize, y: usize, s: &str, attribute: Attribute) {
+    pub fn draw_string(
+        &self,
+        screen: &Screen,
+        pos: Vector2D<usize>,
+        s: &str,
+        attribute: Attribute,
+    ) {
         for (i, ch) in s.chars().enumerate() {
-            let x = x + i * Self::CHAR_WIDTH;
-            self.draw_char(screen, x, y, ch, attribute);
+            let pos = Vector2D::new(pos.x + i * Self::CHAR_WIDTH, pos.y);
+            self.draw_char(screen, pos, ch, attribute);
         }
     }
 }
