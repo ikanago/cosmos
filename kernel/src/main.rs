@@ -7,7 +7,7 @@ mod graphics;
 mod x86;
 
 use common::FrameBufferConfig;
-use global::{flush_console, initialize_console, initialize_screen, write_console, ScreenLock};
+use global::{initialize_console, initialize_screen, ScreenLock};
 use graphics::{mouse::MouseCursor, screen::FilledRectangle, Color, Font, Point, Render};
 use x86::hlt;
 
@@ -33,15 +33,15 @@ extern "C" fn kernel_main(config: FrameBufferConfig) -> ! {
     }
 
     initialize_console(20, 50, Font);
-    write_console(format_args!("Hello, kernel!\n"));
-    write_console(format_args!("1 + 1 = {}\n", 2));
-    flush_console();
+    println!("Hello, kernel!");
+    println!("1 + 1 = {}", 2);
 
     hlt_loop();
 }
 
 #[panic_handler]
-fn panic(_info: &core::panic::PanicInfo) -> ! {
+fn panic(info: &core::panic::PanicInfo) -> ! {
+    println!("{}", info);
     hlt_loop()
 }
 

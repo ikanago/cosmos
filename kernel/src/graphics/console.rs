@@ -112,3 +112,19 @@ impl Write for Console {
         Ok(())
     }
 }
+
+#[macro_export]
+macro_rules! print {
+    ($($arg:tt)*) => {
+        $crate::global::write_console(format_args!($($arg)*));
+        $crate::global::flush_console();
+    };
+}
+
+#[macro_export]
+macro_rules! println {
+    () => { $crate::print!("\n"); };
+    ($($arg:tt)*) => {
+        $crate::print!("{}\n", format_args!($($arg)*));
+    };
+}

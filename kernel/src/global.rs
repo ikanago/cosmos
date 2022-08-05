@@ -1,10 +1,6 @@
 use core::fmt::Write;
 
-use crate::graphics::{
-    console::Console,
-    screen::Screen,
-    Color, Font, Render,
-};
+use crate::graphics::{console::Console, screen::Screen, Color, Font, Render};
 use common::FrameBufferConfig;
 use spin::{Mutex, MutexGuard, Once};
 
