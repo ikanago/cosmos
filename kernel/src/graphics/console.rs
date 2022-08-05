@@ -1,4 +1,9 @@
-use crate::graphics::{Attribute, Font, Point, Render, Screen};
+use core::fmt::Write;
+
+use crate::{
+    global::ScreenLock,
+    graphics::{Attribute, Font, Point, Render},
+};
 
 const CONSOLE_BUFFER_SIZE: usize = 10_000;
 
@@ -84,7 +89,7 @@ impl Console {
 }
 
 impl Render for Console {
-    fn render(&self, screen: &mut Screen) {
+    fn render(&self, screen: &mut ScreenLock) {
         for row in 0..self.num_rows {
             for column in 0..self.num_columns {
                 let index = row * self.num_columns + column;
@@ -96,5 +101,14 @@ impl Render for Console {
                 }
             }
         }
+    }
+}
+
+impl Write for Console {
+    fn write_str(&mut self, s: &str) -> core::fmt::Result {
+        for c in s.chars() {
+            self.put_char(c);
+        }
+        Ok(())
     }
 }

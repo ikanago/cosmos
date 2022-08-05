@@ -1,3 +1,5 @@
+use crate::global::ScreenLock;
+
 use super::{screen::Screen, Color, Point, Render};
 
 pub struct MouseCursor {
@@ -44,7 +46,7 @@ impl MouseCursor {
 }
 
 impl Render for MouseCursor {
-    fn render(&self, screen: &mut Screen) {
+    fn render(&self, screen: &mut ScreenLock) {
         for (y, row) in MouseCursor::MOUSE_CURSOR_SHAPE.iter().enumerate() {
             for (x, pixel) in row.iter().enumerate() {
                 let color = match pixel {

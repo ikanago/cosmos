@@ -5,9 +5,11 @@ pub mod screen;
 use core::ops::AddAssign;
 use screen::Screen;
 
+use crate::global::ScreenLock;
+
 /// Trait to abstruct objects that are rendered on `Screen`.
 pub trait Render {
-    fn render(&self, screen: &mut Screen);
+    fn render(&self, screen: &mut ScreenLock);
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -94,7 +96,7 @@ impl Font {
     /// (x, y) is the coordinate of top left pixel of the bounding rectangle.
     pub fn draw_char(
         &self,
-        screen: &mut Screen,
+        screen: &mut ScreenLock,
         pos: Point<usize>,
         ch: char,
         attribute: Attribute,
@@ -120,7 +122,7 @@ impl Font {
 
     pub fn draw_string(
         &self,
-        screen: &mut Screen,
+        screen: &mut ScreenLock,
         pos: Point<usize>,
         s: &str,
         attribute: Attribute,

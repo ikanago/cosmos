@@ -1,37 +1,7 @@
-use crate::{Color, Point, Render};
+use crate::{global::ScreenLock, Color, Point, Render};
 use common::{FrameBufferConfig, PixelFormat};
-use spin::{Mutex, MutexGuard, Once};
 
 const BYTES_PER_PIXEL: usize = 4;
-
-static SCREEN: Once<Mutex<Screen>> = Once::new();
-
-pub fn initialize_screen(config: FrameBufferConfig) {
-    SCREEN.call_once(|| Mutex::new(Screen::from(config)));
-}
-
-pub struct ScreenLock<'l> {
-    lock: MutexGuard<'l, Screen>,
-}
-
-impl<'l> ScreenLock<'l> {
-    pub fn lock() -> Self {
-        let lock = SCREEN.get().unwrap().lock();
-        Self { lock }
-    }
-
-    pub fn draw<R: Render>(&mut self, drawing: &R) {
-        self.lock.draw(drawing);
-    }
-
-    pub fn draw_pixel(&mut self, x: usize, y: usize, color: Color) {
-        self.lock.draw_pixel(x, y, color);
-    }
-
-    pub fn draw_all(&mut self, color: Color) {
-        self.lock.draw_all(color);
-    }
-}
 
 /// This struct is responsible for drawing pixels via frame buffer.
 pub struct Screen {
@@ -65,9 +35,9 @@ impl From<FrameBufferConfig> for Screen {
 }
 
 impl Screen {
-    pub fn draw<R: Render>(&mut self, drawing: &R) {
-        drawing.render(self);
-    }
+    // pub fn draw<R: Render>(&mut self, drawing: &R) {
+    // drawing.render(self);
+    // }
 
     /// Draw `color` at specified position (x, y).
     /// (x, y) is a coordinate in the form (horizontal, vertical).
@@ -104,7 +74,7 @@ impl FilledRectangle {
 }
 
 impl Render for FilledRectangle {
-    fn render(&self, screen: &mut Screen) {
+    fn render(&self, screen: &mut ScreenLock) {
         for y in 0..self.size.y {
             for x in 0..self.size.x {
                 screen.draw_pixel(self.pos.x + x, self.pos.y + y, self.color);

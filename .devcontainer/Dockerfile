@@ -12,7 +12,7 @@ RUN curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain nightly -y
 RUN mkdir -p /home/vscode/.vscode-server/extensions \
     && chown -R vscode /home/vscode/.vscode-server
 
-ENV CARGO_MAKE_VERSION='0.35.13'
+ENV CARGO_MAKE_VERSION='0.35.15'
 ENV CARGO_MAKE_BIN="cargo-make-v${CARGO_MAKE_VERSION}-x86_64-unknown-linux-musl"
 ENV CARGO_MAKE_ZIP="${CARGO_MAKE_BIN}.zip"
 
