@@ -3,7 +3,6 @@ pub mod mouse;
 pub mod screen;
 
 use core::ops::AddAssign;
-use screen::Screen;
 
 use crate::global::ScreenLock;
 

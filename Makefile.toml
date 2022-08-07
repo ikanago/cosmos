@@ -35,5 +35,8 @@ qemu-system-x86_64 \
     -drive if=pflash,format=raw,readonly,file=/home/vscode/osbook/devenv/OVMF_CODE.fd \
     -drive if=pflash,format=raw,file=/home/vscode/osbook/devenv/OVMF_VARS.fd \
     -drive if=ide,format=raw,media=disk,index=0,file=disk.img \
+    -device nec-usb-xhci,id=xhci \
+    -device usb-mouse \
+    -device usb-kbd \
     -monitor stdio
 '''

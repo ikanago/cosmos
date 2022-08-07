@@ -1,6 +1,6 @@
 use crate::global::ScreenLock;
 
-use super::{screen::Screen, Color, Point, Render};
+use super::{Color, Point, Render};
 
 pub struct MouseCursor {
     pos: Point<usize>,

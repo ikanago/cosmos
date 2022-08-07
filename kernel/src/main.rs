@@ -4,12 +4,15 @@
 
 mod global;
 mod graphics;
+mod pci;
 mod x86;
 
 use common::FrameBufferConfig;
 use global::{initialize_console, initialize_screen, ScreenLock};
 use graphics::{mouse::MouseCursor, screen::FilledRectangle, Color, Font, Point, Render};
 use x86::hlt;
+
+use crate::pci::scan_all_bus;
 
 #[no_mangle]
 extern "C" fn kernel_main(config: FrameBufferConfig) -> ! {
@@ -32,9 +35,20 @@ extern "C" fn kernel_main(config: FrameBufferConfig) -> ! {
         MouseCursor::new(Point::new(300, 300), Color::WHITE, Color::BLACK).render(&mut screen);
     }
 
-    initialize_console(20, 50, Font);
+    initialize_console(35, 90, Font);
     println!("Hello, kernel!");
-    println!("1 + 1 = {}", 2);
+
+    match scan_all_bus() {
+        Err(err) => {
+            println!("{}", err);
+        }
+        Ok(devices) => {
+            println!("{} PCI devices found", devices.len());
+            for device in devices {
+                println!("{}", device);
+            }
+        }
+    }
 
     hlt_loop();
 }
