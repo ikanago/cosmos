@@ -3,6 +3,7 @@
 use core::arch::asm;
 
 pub mod print;
+pub mod trap;
 
 pub fn hlt() -> ! {
     loop {
