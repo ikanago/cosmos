@@ -2,4 +2,5 @@
 *.efi
 *.elf
 
-target
+target/
+kernel.map

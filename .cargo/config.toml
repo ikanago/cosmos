@@ -1,0 +1,9 @@
+[build]
+target = "riscv32i-unknown-none-elf"
+
+[target.riscv32i-unknown-none-elf]
+runner = "qemu-system-riscv32 -machine virt -nographic -serial mon:stdio -bios default --no-reboot -kernel "
+rustflags = ['-Clink-arg=-Tsrc/lds/kernel.ld', '-Clink-arg=-Map=kernel.map']
+
+[unstable]
+build-std = ["core", "compiler_builtins"]
