@@ -15,11 +15,15 @@ impl core::fmt::Write for Writer {
     }
 }
 
+pub fn _print(args: core::fmt::Arguments) {
+    use core::fmt::Write;
+    Writer.write_fmt(args).unwrap();
+}
+
 #[macro_export]
 macro_rules! print {
     ($($arg:tt)*) => {
-        use core::fmt::Write;
-        write!($crate::print::Writer, $($arg)*).unwrap();
+        $crate::print::_print(format_args!($($arg)*));
     };
 }
 

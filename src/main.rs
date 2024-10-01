@@ -2,9 +2,11 @@
 #![no_main]
 #![feature(naked_functions)]
 
+extern crate alloc;
+
 use core::arch::asm;
 
-use cosmos::{hlt, memset, println, trap::{handle_trap, kernel_entry}};
+use cosmos::{hlt, memset, println, trap::kernel_entry};
 
 #[panic_handler]
 fn panic(info: &core::panic::PanicInfo) -> ! {
@@ -35,10 +37,11 @@ fn kernel_main() -> ! {
     unsafe {
         asm!("csrw stvec, {}", in(reg) kernel_entry);
     }
-    println!("Hello, Cosmos!");
 
-    unsafe {
-        asm!("unimp");
-    }
+    println!("Hello, Cosmos!");
+    let mut v = alloc::vec::Vec::new();
+    v.push(42);
+    println!("{:p}", v.as_ptr());
+
     hlt();
 }

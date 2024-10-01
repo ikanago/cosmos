@@ -2,6 +2,7 @@
 
 use core::arch::asm;
 
+pub mod allocator;
 pub mod print;
 pub mod trap;
 

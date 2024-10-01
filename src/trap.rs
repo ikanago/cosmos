@@ -35,7 +35,7 @@ pub struct TrapFrame {
     pub sp: usize,
 }
 
-pub fn handle_trap(_: &TrapFrame) -> ! {
+fn handle_trap(_: &TrapFrame) -> ! {
     let mut scause: usize;
     let mut stval: usize;
     let mut user_pc: usize;
